@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8
+    container_name: iris-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app_db
+    networks:
+      - rails-network
+
+  
+  app:
+    build: .
+    image: iris-rails-app1
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PASSWORD: root
+    networks:
+      - rails-network
+
+  
+  nginx:
+    build: ./nginx
+    container_name: iris-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - app
+    networks:
+      - rails-network
+
+networks:
+  rails-network:
+    driver: bridge
