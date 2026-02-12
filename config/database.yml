@@ -14,12 +14,13 @@ default: &default
   encoding: utf8mb4
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: root
-  password: Gukesh12garry@
-  socket: /var/run/mysqld/mysqld.sock
+  password: root  # CHANGE THIS to match your docker-compose password
+  host: iris-mysql
+
 
 development:
   <<: *default
-  database: iris_systems_rec_task_development
+  database: app_db
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
