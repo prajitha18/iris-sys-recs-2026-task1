@@ -15,7 +15,7 @@ default: &default
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: root
   password: root  # CHANGE THIS to match your docker-compose password
-  host: iris-mysql
+  host: db
 
 
 development:
