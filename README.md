@@ -1,206 +1,91 @@
-\# Task 1 – Dockerizing the Rails Application
+# Dockerized Rails Application Project
 
+This project demonstrates a **complete Dockerized setup** for a Rails application with MySQL, Nginx, load balancing, persistence, and request rate limiting. The project is divided into multiple branches, each focusing on a specific task or feature.  
 
-
-\## Objective
-
-
-
-The objective of this task is to package the Rails application into a Docker container image and successfully run it inside a Docker container.
-
-
+The main goal is to build a **production-ready environment** for a Rails application using Docker and Docker Compose.
 
 ---
 
+## Project Overview
 
+The project covers:
 
-\## Architecture Overview
+1. **Rails Application Containerization**  
+   - Pack the Rails app into a Docker container image.  
+   - Launch the app in a container and connect it to a MySQL database container.
 
+2. **MySQL Database Setup**  
+   - Launch MySQL in a separate container.  
+   - Database port is **internal only**, not exposed to the host.  
+   - Enable **persistent storage** for database data.
 
+3. **Application Exposure**  
+   - Rails app exposed to host on **localhost:8080**.  
 
-At this stage, only the Rails application is containerized.
+4. **Nginx Reverse Proxy & Load Balancing**  
+   - Launch an Nginx container to act as a reverse proxy.  
+   - Load balances incoming requests across multiple Rails app containers (3 replicas).  
+   - Nginx exposed at **localhost:80**, Rails app should not be accessed directly.
 
+5. **Persistence**  
+   - Persistent storage for MySQL data and Nginx configuration, so data and config survive container restarts.
 
+6. **Request Rate Limiting**  
+   - Limit the number of requests a client can send to the app using Nginx.  
+   - Prevents abuse or accidental overload.  
 
-Host Machine  
-
-↓  
-
-Docker Container (Rails Application)
-
-
-
----
-
-
-
-\## Implementation Steps
-
-
-
-\### 1. Created a Dockerfile
-
-
-
-A `Dockerfile` was created in the root directory of the project to containerize the Rails application.
-
-
-
-Dockerfile content:
-
-
-
-```dockerfile
-
-FROM ruby:3.2
-
-
-
-WORKDIR /app
-
-
-
-\# Install dependencies
-
-COPY Gemfile Gemfile.lock ./
-
-RUN bundle install
-
-
-
-\# Copy application code
-
-COPY . .
-
-
-
-\# Expose Rails default port
-
-EXPOSE 3000
-
-
-
-\# Start Rails server
-
-CMD \["rails", "server", "-b", "0.0.0.0"]
-
-```
-
-
+7. **Docker Compose Orchestration**  
+   - All containers can be brought up together with **one command**.  
+   - Simplifies management of multiple containers and ensures proper networking.
 
 ---
 
+## Branch Overview
 
+| Branch Name            | Task / Feature |
+|------------------------|----------------|
+| `rails-docker`         | Containerize Rails application and run in Docker. |
+| `mysql-container`      | Set up MySQL container with internal-only networking and persistence. |
+| `nginx-reverse-proxy`  | Configure Nginx as reverse proxy for Rails app. |
+| `load-balancing`       | Launch multiple Rails app containers and configure Nginx load balancing. |
+| `persistence`          | Add persistent storage for MySQL and Nginx. |
+| `docker-compose`       | Orchestrate all containers using Docker Compose. |
+| `rate-limit`           | Add request rate limiting in Nginx. |
 
-\### 2. Built Docker Image
+---
 
+## Accessing the Application
 
+- **Via Nginx (recommended):** [http://localhost](http://localhost)  
+- **Direct Rails app (internal, not recommended):** localhost:8080 (for testing)  
+- **Database:** Internal container access only  
 
-The following command was used to build the Docker image:
+---
 
+## Quick Start
 
+1. Build and launch all containers with Docker Compose:
 
 ```bash
-
-docker build -t iris-rails-app1 .
-
+docker-compose up -d
+```
+2. Stop all containers:
+```
+docker-compose down
 ```
 
-
-
-This created a Docker image named `iris-rails-app1`.
-
-
-
----
-
-
-
-\### 3. Launched Docker Container
-
-
-
-The container was started using:
-
-
-
-```bash
-
-docker run -d -p 8080:3000 iris-rails-app1
-
+3. Reload Nginx after config changes:
 ```
+docker exec -it nginx-container nginx -s reload
+```
+### References
 
+Docker Documentation
 
+Docker Compose Documentation
 
-Explanation:
+Nginx Limit Request Module
 
+Rails Guides
 
-
-\- `-d` runs the container in detached mode
-
-\- `8080:3000` maps container port 3000 to host port 8080
-
-
-
----
-
-
-
-\## Application Access
-
-
-
-After running the container, the application was accessible at:
-
-
-
-http://localhost:8080
-
-
-
----
-
-
-
-\## Screenshots
-
-
-
-\### Docker Image Build
-
-
-
-!\[Docker Build](screenshots/task1-building-image.png)
-
-
-
-
-
-
-
-\## Result
-
-
-
-\- Rails application successfully containerized
-
-\- Docker image built successfully
-
-\- Container launched without errors
-
-\- Application accessible via localhost:8080
-
-
-
----
-
-
-
-\## Conclusion
-
-
-
-The Rails application has been successfully packaged into a Docker container image and launched as a running container, fulfilling the requirements of Task 1.
-
-
-
+### Result: A fully Dockerized, load-balanced, persistent Rails application setup with Nginx reverse proxy and request rate limiting.
