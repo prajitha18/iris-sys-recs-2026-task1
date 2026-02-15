@@ -1,206 +1,61 @@
-\# Task 1 – Dockerizing the Rails Application
+# Nginx Reverse Proxy for Rails Application
 
+This project demonstrates how to set up **Nginx** as a reverse proxy for a **Rails application**.  
+All requests to the Rails app go through Nginx on port `80`. Direct access to Rails is blocked.
 
+---
 
-\## Objective
+## Table of Contents
+- [Prerequisites](#prerequisites)
+- [Project Structure](#project-structure)
+- [Setup Instructions](#setup-instructions)
+- [Testing](#testing)
+- [Notes](#notes)
 
+---
 
-
-The objective of this task is to package the Rails application into a Docker container image and successfully run it inside a Docker container.
-
-
+## Prerequisites
+- [Docker](https://www.docker.com/) installed  
+- [Docker Compose](https://docs.docker.com/compose/) (optional)  
+- Rails application running on port `3000`  
 
 ---
 
 
-
-\## Architecture Overview
-
-
-
-At this stage, only the Rails application is containerized.
-
-
-
-Host Machine  
-
-↓  
-
-Docker Container (Rails Application)
-
-
-
 ---
 
+## Setup Instructions
 
+### 1. Nginx Configuration
+Create `nginx/default.conf`:
 
-\## Implementation Steps
+![code](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%203(config%20code).png?raw=true)
 
+### 2. Nginx Dockerfile
 
-
-\### 1. Created a Dockerfile
-
-
-
-A `Dockerfile` was created in the root directory of the project to containerize the Rails application.
-
-
-
-Dockerfile content:
-
-
-
-```dockerfile
-
-FROM ruby:3.2
-
-
-
-WORKDIR /app
-
-
-
-\# Install dependencies
-
-COPY Gemfile Gemfile.lock ./
-
-RUN bundle install
-
-
-
-\# Copy application code
-
-COPY . .
-
-
-
-\# Expose Rails default port
-
-EXPOSE 3000
-
-
-
-\# Start Rails server
-
-CMD \["rails", "server", "-b", "0.0.0.0"]
-
+Create nginx/Dockerfile:
 ```
-
-
-
----
-
-
-
-\### 2. Built Docker Image
-
-
-
-The following command was used to build the Docker image:
-
-
-
-```bash
-
-docker build -t iris-rails-app1 .
-
+FROM nginx:latest
+COPY default.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
 ```
-
-
-
-This created a Docker image named `iris-rails-app1`.
-
-
-
----
-
-
-
-\### 3. Launched Docker Container
-
-
-
-The container was started using:
-
-
-
-```bash
-
-docker run -d -p 8080:3000 iris-rails-app1
-
+### 3. Build and Run Nginx Container
 ```
+cd nginx
+docker build -t nginx-reverse-proxy .
+docker run -d --name nginx-proxy -p 80:80 nginx-reverse-proxy
+```
+Run with:
+```
+docker-compose up -d
+```
+### Testing
 
+Open http://localhost
+ in a browser
 
+Rails application should load via Nginx
 
-Explanation:
-
-
-
-\- `-d` runs the container in detached mode
-
-\- `8080:3000` maps container port 3000 to host port 8080
-
-
-
----
-
-
-
-\## Application Access
-
-
-
-After running the container, the application was accessible at:
-
-
-
-http://localhost:8080
-
-
-
----
-
-
-
-\## Screenshots
-
-
-
-\### Docker Image Build
-
-
-
-!\[Docker Build](screenshots/task1-building-image.png)
-
-
-
-
-
-
-
-\## Result
-
-
-
-\- Rails application successfully containerized
-
-\- Docker image built successfully
-
-\- Container launched without errors
-
-\- Application accessible via localhost:8080
-
-
-
----
-
-
-
-\## Conclusion
-
-
-
-The Rails application has been successfully packaged into a Docker container image and launched as a running container, fulfilling the requirements of Task 1.
-
-
-
+Direct access to Rails on port 3000 is discouraged
+## Screenshot
+![output](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%203.png?raw=true)
