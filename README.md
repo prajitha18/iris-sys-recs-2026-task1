@@ -1,206 +1,28 @@
-\# Task 1 – Dockerizing the Rails Application
-
-
-
-\## Objective
-
-
-
-The objective of this task is to package the Rails application into a Docker container image and successfully run it inside a Docker container.
-
-
-
----
-
-
-
-\## Architecture Overview
-
-
-
-At this stage, only the Rails application is containerized.
-
-
-
-Host Machine  
-
-↓  
-
-Docker Container (Rails Application)
-
-
-
----
-
-
-
-\## Implementation Steps
-
-
-
-\### 1. Created a Dockerfile
-
-
-
-A `Dockerfile` was created in the root directory of the project to containerize the Rails application.
-
-
-
-Dockerfile content:
-
-
-
-```dockerfile
-
-FROM ruby:3.2
-
-
-
-WORKDIR /app
-
-
-
-\# Install dependencies
-
-COPY Gemfile Gemfile.lock ./
-
-RUN bundle install
-
-
-
-\# Copy application code
-
-COPY . .
-
-
-
-\# Expose Rails default port
-
-EXPOSE 3000
-
-
-
-\# Start Rails server
-
-CMD \["rails", "server", "-b", "0.0.0.0"]
-
-```
-
-
-
----
-
-
-
-\### 2. Built Docker Image
-
-
-
-The following command was used to build the Docker image:
-
-
-
+# Task: Docker Compose Setup
+
+## Task Description
+This task involves using **Docker Compose** to bring multiple containers (e.g., application, database, Nginx) up together with a **single command**, instead of starting each container individually.  
+
+## Steps Taken
+1. Created a `docker-compose.yml` file defining all services:
+   - Application container (e.g., Iris System Recs app)
+   - Database container
+   - Optional Nginx container for reverse proxy
+2. Configured ports, environment variables, and volume mappings in the `docker-compose.yml`.
+3. Tested the setup locally to ensure all containers start together and communicate correctly.
+
+## Commands / Configuration Used
+```markdown
 ```bash
+# To start all containers together:
+docker-compose up -d
 
-docker build -t iris-rails-app1 .
-
+# To stop all containers:
+docker-compose down
 ```
 
+## Screenshots
 
-
-This created a Docker image named `iris-rails-app1`.
-
-
-
----
-
-
-
-\### 3. Launched Docker Container
-
-
-
-The container was started using:
-
-
-
-```bash
-
-docker run -d -p 8080:3000 iris-rails-app1
-
-```
-
-
-
-Explanation:
-
-
-
-\- `-d` runs the container in detached mode
-
-\- `8080:3000` maps container port 3000 to host port 8080
-
-
-
----
-
-
-
-\## Application Access
-
-
-
-After running the container, the application was accessible at:
-
-
-
-http://localhost:8080
-
-
-
----
-
-
-
-\## Screenshots
-
-
-
-\### Docker Image Build
-
-
-
-!\[Docker Build](screenshots/task1-building-image.png)
-
-
-
-
-
-
-
-\## Result
-
-
-
-\- Rails application successfully containerized
-
-\- Docker image built successfully
-
-\- Container launched without errors
-
-\- Application accessible via localhost:8080
-
-
-
----
-
-
-
-\## Conclusion
-
-
-
-The Rails application has been successfully packaged into a Docker container image and launched as a running container, fulfilling the requirements of Task 1.
-
-
+Docker containers running:
+![Containers Up](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-6/Screenshot%202026-02-12%20184049.png?raw=true)
 
