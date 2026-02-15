@@ -35,7 +35,6 @@ All requests to port `80` go through **Nginx**, which distributes traffic across
 ## Running the Application
 
 ![input](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204%20(launcing%202%20more%20containers).png?raw=true)
-![input1](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204(connecting%20using%201%20data%20base.png?raw=true)
 
 The application is now accessible at http://localhost
 
