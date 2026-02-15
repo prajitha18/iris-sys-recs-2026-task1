@@ -37,6 +37,27 @@ docker volume create rails-db-data
 ```
 ### 2. Start the database container with persistent volume
 ![input](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%205%20(2).png?raw=true)
+## Debugging & Cleanup
+
+During development, Docker can create multiple unused containers, networks, and volumes.  
+To clean up and free space, the following steps were used:
+
+1. **List all Docker volumes**  
+```bash
+docker volume ls
+```
+Remove all unused volumes, networks, and containers
+```
+docker system prune -a --volumes
+```
+This command removes all stopped containers, unused networks, dangling images, and unused volumes.
+Only active volumes used by running containers remain intact.
+
+Verify cleanup
+```
+docker volume ls
+docker ps -a
+```
 ![input2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%205(1).png?raw=true)
 
 
