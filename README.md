@@ -70,5 +70,7 @@ Testing Rate Limit
 ```
 for i in {1..20}; do curl -i http://localhost:8080/; done
 ```
-##screenshot
+
+##Screenshot
 ![output](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-7a/screenshots/Task%207.png)
+![output1](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-7a/screenshots/Screenshot%202026-02-15%20164710.png)
