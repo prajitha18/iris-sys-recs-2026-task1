@@ -1,206 +1,69 @@
-\# Task 1 – Dockerizing the Rails Application
+# Persistent Database and Nginx Configuration
 
+This project demonstrates how to **enable data persistence** for your Rails application setup:  
 
+- **Database container**: Data remains intact even if the container stops or is removed.  
+- **Nginx container**: Configuration files remain persistent across container restarts.
 
-\## Objective
-
-
-
-The objective of this task is to package the Rails application into a Docker container image and successfully run it inside a Docker container.
-
-
+All other functionality remains the same as the Nginx load balancing setup.
 
 ---
 
-
-
-\## Architecture Overview
-
-
-
-At this stage, only the Rails application is containerized.
-
-
-
-Host Machine  
-
-↓  
-
-Docker Container (Rails Application)
-
-
+## Prerequisites
+- Docker installed  
+- Rails application ready in containers  
+- Database container (e.g., Postgres)  
+- Nginx configuration files prepared  
 
 ---
 
+## Setup Overview
 
+1. **Database Persistence**
+   - Use a **Docker volume** to store database files.
+   - The database container uses this volume so that data is not lost when the container is removed.
 
-\## Implementation Steps
-
-
-
-\### 1. Created a Dockerfile
-
-
-
-A `Dockerfile` was created in the root directory of the project to containerize the Rails application.
-
-
-
-Dockerfile content:
-
-
-
-```dockerfile
-
-FROM ruby:3.2
-
-
-
-WORKDIR /app
-
-
-
-\# Install dependencies
-
-COPY Gemfile Gemfile.lock ./
-
-RUN bundle install
-
-
-
-\# Copy application code
-
-COPY . .
-
-
-
-\# Expose Rails default port
-
-EXPOSE 3000
-
-
-
-\# Start Rails server
-
-CMD \["rails", "server", "-b", "0.0.0.0"]
-
-```
-
-
+2. **Nginx Configuration Persistence**
+   - Mount a host directory (or Docker volume) to `/etc/nginx/conf.d/` in the Nginx container.
+   - Any changes to configuration files are saved on the host and persist across container restarts.
 
 ---
 
+## Running the Application with Persistence
 
-
-\### 2. Built Docker Image
-
-
-
-The following command was used to build the Docker image:
-
-
-
+### 1. Create a volume for the database
 ```bash
-
-docker build -t iris-rails-app1 .
-
+docker volume create rails-db-data
 ```
+### 2. Start the database container with persistent volume
+![input](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%205%20(2).png?raw=true)
+![input2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%205(1).png?raw=true)
 
 
-
-This created a Docker image named `iris-rails-app1`.
-
-
-
----
-
-
-
-\### 3. Launched Docker Container
-
-
-
-The container was started using:
-
-
-
-```bash
-
-docker run -d -p 8080:3000 iris-rails-app1
-
+### 3. Start Nginx container with persistent configuration 
 ```
+docker run -d --name nginx-proxy \
+  -p 80:80 \
+  -v /path/to/nginx/conf:/etc/nginx/conf.d \
+  your-nginx-image
+```
+![input5](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%205(persistance).png?raw=true)
+### Testing
 
+Database changes remain intact even if the database container is removed and recreated.
 
+Nginx configuration changes persist even after restarting the Nginx container.
 
-Explanation:
+Application continues to run normally through Nginx load balancing.
 
+### Notes
 
+Docker volumes are the preferred way to persist container data.
 
-\- `-d` runs the container in detached mode
+Host-mounted directories are useful for configuration files you want to edit without rebuilding the container.
 
-\- `8080:3000` maps container port 3000 to host port 8080
+This setup ensures safe data persistence for development and testing environments.
 
+## Screenshot
 
-
----
-
-
-
-\## Application Access
-
-
-
-After running the container, the application was accessible at:
-
-
-
-http://localhost:8080
-
-
-
----
-
-
-
-\## Screenshots
-
-
-
-\### Docker Image Build
-
-
-
-!\[Docker Build](screenshots/task1-building-image.png)
-
-
-
-
-
-
-
-\## Result
-
-
-
-\- Rails application successfully containerized
-
-\- Docker image built successfully
-
-\- Container launched without errors
-
-\- Application accessible via localhost:8080
-
-
-
----
-
-
-
-\## Conclusion
-
-
-
-The Rails application has been successfully packaged into a Docker container image and launched as a running container, fulfilling the requirements of Task 1.
-
-
-
+![output2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%205(3).png?raw=true)
