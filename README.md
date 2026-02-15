@@ -53,7 +53,7 @@ http://localhost:8080
 The MySQL database is internal only and cannot be accessed from the host directly.
 
 ## Screenshot
-[output2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-2a/screenshots/task%202%20(output).png?raw=true)
+![output2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-2a/screenshots/task%202%20(output).png?raw=true)
 ## Results
 Rails application successfully connected to MySQL in separate containers.
 
