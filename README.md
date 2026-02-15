@@ -22,9 +22,9 @@ This project demonstrates **limiting HTTP requests per client** using Nginx to p
 ## Project Structure
 
 nginx-rate-limit/
-├── Dockerfile
-├── default.conf
-└── html/index.html
+ Dockerfile
+ default.conf
+ html/index.html
 
 ---
 
@@ -71,4 +71,4 @@ Testing Rate Limit
 for i in {1..20}; do curl -i http://localhost:8080/; done
 ```
 ##screenshot
-![output]()
+![output](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-7a/screenshots/Task%207.png)
