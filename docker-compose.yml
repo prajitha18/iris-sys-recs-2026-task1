@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   db:
@@ -7,10 +7,12 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: app_db
+    # --- PERSISTENCE FOR DATABASE ---
+    volumes:
+      - mysql_data:/var/lib/mysql 
     networks:
       - rails-network
 
-  
   app:
     build: .
     image: iris-rails-app1
@@ -22,16 +24,69 @@ services:
     networks:
       - rails-network
 
-  
   nginx:
-    build: ./nginx
+    # Use the official image and mount your local config
+    image: nginx:latest
     container_name: iris-nginx
     ports:
       - "80:80"
+    # --- PERSISTENCE FOR NGINX CONFIG ---
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app
     networks:
       - rails-network
+
+# --- DECLARE THE NAMED VOLUME ---
+volumes:
+  mysql_data:
+
+networks:
+  rails-network:
+    driver: bridgeversion: '3.8'
+
+services:
+  db:
+    image: mysql:8
+    container_name: iris-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app_db
+    # --- PERSISTENCE FOR DATABASE ---
+    volumes:
+      - mysql_data:/var/lib/mysql 
+    networks:
+      - rails-network
+
+  app:
+    build: .
+    image: iris-rails-app1
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PASSWORD: root
+    networks:
+      - rails-network
+
+  nginx:
+    # Use the official image and mount your local config
+    image: nginx:latest
+    container_name: iris-nginx
+    ports:
+      - "80:80"
+    # --- PERSISTENCE FOR NGINX CONFIG ---
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - rails-network
+
+# --- DECLARE THE NAMED VOLUME ---
+volumes:
+  mysql_data:
 
 networks:
   rails-network:

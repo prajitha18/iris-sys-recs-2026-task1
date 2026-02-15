@@ -17,7 +17,6 @@ default: &default
   password: root  # CHANGE THIS to match your docker-compose password
   host: db
 
-
 development:
   <<: *default
   database: app_db
