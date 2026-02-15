@@ -1,206 +1,64 @@
-\# Task 1 – Dockerizing the Rails Application
+# Nginx Load Balancer for Rails Application (Without Docker Compose)
 
-
-
-\## Objective
-
-
-
-The objective of this task is to package the Rails application into a Docker container image and successfully run it inside a Docker container.
-
-
+This project demonstrates how to configure **Nginx** as a **load balancer** for multiple Rails application containers.  
+All requests to port `80` go through **Nginx**, which distributes traffic across **three Rails containers**, all connected to a single database container.
 
 ---
 
-
-
-\## Architecture Overview
-
-
-
-At this stage, only the Rails application is containerized.
-
-
-
-Host Machine  
-
-↓  
-
-Docker Container (Rails Application)
-
-
+## Prerequisites
+- Docker installed  
+- Rails application ready to run in containers  
+- Database container (e.g., Postgres)
 
 ---
 
+## Setup Overview
 
+1. **Database Container**  
+   - Launch a single database container that all Rails containers will connect to.
 
-\## Implementation Steps
+2. **Rails Application Containers**  
+   - Launch **three separate Rails containers**.  
+   - Each container connects to the same database.  
+   - Do not expose Rails ports publicly; Nginx will forward requests.
 
+3. **Nginx Load Balancer**  
+   - Launch an Nginx container configured to forward requests to all three Rails containers.  
+   - Load balancing uses **round-robin** by default.  
+   - Expose Nginx on **port 80**.
 
-
-\### 1. Created a Dockerfile
-
-
-
-A `Dockerfile` was created in the root directory of the project to containerize the Rails application.
-
-
-
-Dockerfile content:
-
-
-
-```dockerfile
-
-FROM ruby:3.2
-
-
-
-WORKDIR /app
-
-
-
-\# Install dependencies
-
-COPY Gemfile Gemfile.lock ./
-
-RUN bundle install
-
-
-
-\# Copy application code
-
-COPY . .
-
-
-
-\# Expose Rails default port
-
-EXPOSE 3000
-
-
-
-\# Start Rails server
-
-CMD \["rails", "server", "-b", "0.0.0.0"]
-
-```
-
-
+> Full Nginx and Rails configuration files are available in the `nginx/` and Rails folders.
+> ![output3](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204%20(load%20balancing).png?raw=true)
 
 ---
 
+## Running the Application
 
+![input](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204%20(launcing%202%20more%20containers).png?raw=true)
+![input1](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204(connecting%20using%201%20data%20base.png?raw=true)
 
-\### 2. Built Docker Image
+The application is now accessible at http://localhost
 
+Nginx automatically distributes requests across the three Rails containers.
 
+### Testing
 
-The following command was used to build the Docker image:
+Open http://localhost
 
+Requests should be routed to different Rails containers in round-robin fashion.
 
+Direct access to Rails container ports is discouraged.
+### Screenshot
+![output](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204%20(output1).png?raw=true)
+![output2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204%20(output2).png?raw=true)
+![input2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-3a/screenshots/task%204%20(output3).png?raw=true)
 
-```bash
+### Notes
 
-docker build -t iris-rails-app1 .
+All Rails containers share a single database; ensure database consistency.
 
-```
+Nginx round-robin is the default load balancing method.
 
+This setup is a precursor to Docker Compose, which can simplify multi-container management.
 
-
-This created a Docker image named `iris-rails-app1`.
-
-
-
----
-
-
-
-\### 3. Launched Docker Container
-
-
-
-The container was started using:
-
-
-
-```bash
-
-docker run -d -p 8080:3000 iris-rails-app1
-
-```
-
-
-
-Explanation:
-
-
-
-\- `-d` runs the container in detached mode
-
-\- `8080:3000` maps container port 3000 to host port 8080
-
-
-
----
-
-
-
-\## Application Access
-
-
-
-After running the container, the application was accessible at:
-
-
-
-http://localhost:8080
-
-
-
----
-
-
-
-\## Screenshots
-
-
-
-\### Docker Image Build
-
-
-
-!\[Docker Build](screenshots/task1-building-image.png)
-
-
-
-
-
-
-
-\## Result
-
-
-
-\- Rails application successfully containerized
-
-\- Docker image built successfully
-
-\- Container launched without errors
-
-\- Application accessible via localhost:8080
-
-
-
----
-
-
-
-\## Conclusion
-
-
-
-The Rails application has been successfully packaged into a Docker container image and launched as a running container, fulfilling the requirements of Task 1.
-
-
-
+You can extend Nginx to add SSL, caching, or advanced routing in the future.
