@@ -1,206 +1,56 @@
-\# Task 1 – Dockerizing the Rails Application
+# Task 2 – Dockerizing Rails Application with MySQL
 
+## Objective
 
-
-\## Objective
-
-
-
-The objective of this task is to package the Rails application into a Docker container image and successfully run it inside a Docker container.
-
-
+The objective of this task is to run the Rails application and MySQL database in separate Docker containers and ensure they can communicate internally.  
+The Rails application should be accessible on the host at port `8080`, while the MySQL database should remain internal to the Docker network and not exposed externally.
 
 ---
 
 
-
-\## Architecture Overview
-
-
-
-At this stage, only the Rails application is containerized.
-
-
-
-Host Machine  
-
-↓  
-
-Docker Container (Rails Application)
-
-
+- Rails container exposes port `8080` to the host.  
+- MySQL container port is **not exposed** to the host, only accessible internally within the Docker network.
 
 ---
 
+## Implementation Steps
 
+### 1. Create a Docker Network
 
-\## Implementation Steps
-
-
-
-\### 1. Created a Dockerfile
-
-
-
-A `Dockerfile` was created in the root directory of the project to containerize the Rails application.
-
-
-
-Dockerfile content:
-
-
-
-```dockerfile
-
-FROM ruby:3.2
-
-
-
-WORKDIR /app
-
-
-
-\# Install dependencies
-
-COPY Gemfile Gemfile.lock ./
-
-RUN bundle install
-
-
-
-\# Copy application code
-
-COPY . .
-
-
-
-\# Expose Rails default port
-
-EXPOSE 3000
-
-
-
-\# Start Rails server
-
-CMD \["rails", "server", "-b", "0.0.0.0"]
-
-```
-
-
-
----
-
-
-
-\### 2. Built Docker Image
-
-
-
-The following command was used to build the Docker image:
-
-
+Create a dedicated Docker network to allow the Rails app and MySQL containers to communicate internally:
 
 ```bash
-
-docker build -t iris-rails-app1 .
-
+docker network create rails-mysql-network
 ```
+### 2. Launch MySQL Container
 
+Run the MySQL container inside the network without exposing it to the host:
+![output]()
+### 3. Configure Rails Database Connection
 
-
-This created a Docker image named `iris-rails-app1`.
-
-
-
----
-
-
-
-\### 3. Launched Docker Container
-
-
-
-The container was started using:
-
-
-
-```bash
-
-docker run -d -p 8080:3000 iris-rails-app1
-
+Update your Rails config/database.yml to connect to the MySQL container:
+![code]()
+### 4. Build Rails Docker Image
 ```
+docker build -t iris-rails-app .
+```
+### 5. Launch Rails Container
 
+Run the Rails container and attach it to the same network:
+```
+docker run -d \
+  --name iris-rails \
+  --network rails-mysql-network \
+  -p 8080:3000 \
+  iris-rails-app
+```
+## Application Access
 
-
-Explanation:
-
-
-
-\- `-d` runs the container in detached mode
-
-\- `8080:3000` maps container port 3000 to host port 8080
-
-
-
----
-
-
-
-\## Application Access
-
-
-
-After running the container, the application was accessible at:
-
-
+After launching both containers, the Rails application can be accessed at:
 
 http://localhost:8080
 
+The MySQL database is internal only and cannot be accessed from the host directly.
 
-
----
-
-
-
-\## Screenshots
-
-
-
-\### Docker Image Build
-
-
-
-!\[Docker Build](screenshots/task1-building-image.png)
-
-
-
-
-
-
-
-\## Result
-
-
-
-\- Rails application successfully containerized
-
-\- Docker image built successfully
-
-\- Container launched without errors
-
-\- Application accessible via localhost:8080
-
-
-
----
-
-
-
-\## Conclusion
-
-
-
-The Rails application has been successfully packaged into a Docker container image and launched as a running container, fulfilling the requirements of Task 1.
-
-
-
+## Screenshot
+[output2]()
