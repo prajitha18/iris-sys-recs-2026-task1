@@ -39,6 +39,8 @@ COPY . .
 
 # Expose Rails default port
 EXPOSE 3000
+# Start Rails server
+CMD ["rails", "server", "-b", "0.0.0.0"]
 ```
 ### 2. Built Docker Image
 ```
@@ -55,8 +57,7 @@ After running the container, the application was accessible at:
 
 http://localhost:8080
 ## Screenshot
-![output1]()
+![output1](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-1a/screenshots/task1-building-image.png)
 
-# Start Rails server
-CMD ["rails", "server", "-b", "0.0.0.0"]
+
 ``
