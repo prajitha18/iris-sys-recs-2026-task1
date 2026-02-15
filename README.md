@@ -23,6 +23,5 @@ docker-compose down
 
 ## Screenshots
 
-Docker containers running:
 ![Containers Up](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-original(contains-all-the-branches-instead-of-main)/screenshots/task%206%20,%20conf%20code.png?raw=true)
 
