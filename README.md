@@ -170,7 +170,9 @@ http://localhost:8080
 
 
 
-!\[Docker Build](screenshots/task 1 (building image).png)
+!\[Docker Build](screenshots/task1-building-image.png)
+
+
 
 
 
