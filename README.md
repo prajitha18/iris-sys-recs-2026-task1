@@ -25,11 +25,11 @@ docker network create rails-mysql-network
 ### 2. Launch MySQL Container
 
 Run the MySQL container inside the network without exposing it to the host:
-![output]()
+![output](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-2a/screenshots/task%202%20(%20connecting%20sql).png?raw=true)
 ### 3. Configure Rails Database Connection
 
 Update your Rails config/database.yml to connect to the MySQL container:
-![code]()
+![code](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-2a/screenshots/task%202%20(connecting%20sql2).png?raw=true)
 ### 4. Build Rails Docker Image
 ```
 docker build -t iris-rails-app .
@@ -40,7 +40,7 @@ Run the Rails container and attach it to the same network:
 ```
 docker run -d \
   --name iris-rails \
-  --network rails-mysql-network \
+  --network rails-networkmen \
   -p 8080:3000 \
   iris-rails-app
 ```
@@ -53,4 +53,10 @@ http://localhost:8080
 The MySQL database is internal only and cannot be accessed from the host directly.
 
 ## Screenshot
-[output2]()
+[output2](https://github.com/prajitha18/iris-sys-recs-2026/blob/task-2a/screenshots/task%202%20(output).png?raw=true)
+## Results
+Rails application successfully connected to MySQL in separate containers.
+
+Rails accessible on host at localhost:8080.
+
+MySQL is internal, ensuring security and isolation.
