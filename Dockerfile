@@ -27,5 +27,4 @@ RUN bundle exec rails assets:precompile
 # Expose Rails port
 EXPOSE 3000
 
-# Start Rails server
-CMD ["rails", "server", "-b", "0.0.0.0"]
+CMD ["sh", "-c", "sleep 10 && bundle exec rails db:prepare && rails server -b 0.0.0.0"]
