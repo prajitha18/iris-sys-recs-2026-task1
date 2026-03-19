@@ -1,37 +1,7 @@
 
 
 services:
-  db:
-    image: mysql:8
-    container_name: iris-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: app_db
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - rails-network
 
-  app:
-    build: .
-
-    depends_on:
-     - db
-    environment:
-      DATABASE_HOST: db
-      DATABASE_PASSWORD: root
-    command: >
-      sh -c "
-      apt-get update -qq && apt-get install -y default-mysql-client &&
-      until mysqladmin ping -h db -uroot -proot --silent; do
-        echo 'Waiting for MySQL...';
-        sleep 2;
-      done;
-      bundle exec rails db:create db:migrate;
-      rails server -b 0.0.0.0
-      "
-    networks:
-    - rails-network
 
   nginx:
     image: nginx:latest
@@ -44,11 +14,102 @@ services:
     depends_on:
       - app
     networks:
-      - rails-network
+      - public
+      - app_net
+      - monitoring_net
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PASSWORD: root
+    command: >
+      sh -c "
+      until mysqladmin ping -h db --silent; do
+        echo 'Waiting for MySQL...';
+      sleep 2;
+      done;
+
+      if [ \"$HOSTNAME\" = \"iris-sys-recs-2026-task1-app-1\" ]; then
+        echo 'Running migrations...';
+        bundle exec rails db:prepare;
+      else
+        echo 'Skipping migrations...';
+      fi;
+
+      rails server -b 0.0.0.0
+      "
+    volumes:
+      - nfs_data:/shared
+    networks:
+      - app_net
+      - storage_net
+
+  db:
+    image: mysql:8
+    container_name: iris-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: app_db
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_net
+
+  nfs:
+    image: itsthenetwork/nfs-server-alpine
+    container_name: iris-nfs
+    privileged: true
+    environment:
+      SHARED_DIRECTORY: /exports
+    volumes:
+      - nfs_data:/exports
+    networks:
+      - storage_net
+
+  backup:
+    image: mysql:8
+    container_name: iris-backup
+    depends_on:
+      - db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - ./backups:/backup
+    command: >
+      sh -c "
+      while true; do
+        mysqldump -h db -uroot -proot app_db > /backup/backup.sql;
+        echo 'Backup completed';
+        sleep 60;
+      done
+      "
+    networks:
+      - storage_net
+      - app_net
+
+  prometheus:
+    image: prom/prometheus
+    container_name: iris-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring_net
+
+  grafana:
+    image: grafana/grafana
+    container_name: iris-grafana
+    networks:
+      - monitoring_net
 
 volumes:
   mysql_data:
+  nfs_data:
 
 networks:
-  rails-network:
-    driver: bridge
+  public:
+  app_net:
+  storage_net:
+  monitoring_net:
