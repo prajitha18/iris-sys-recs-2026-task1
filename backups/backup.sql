@@ -124,7 +124,7 @@ CREATE TABLE `ar_internal_metadata` (
 
 LOCK TABLES `ar_internal_metadata` WRITE;
 /*!40000 ALTER TABLE `ar_internal_metadata` DISABLE KEYS */;
-INSERT INTO `ar_internal_metadata` VALUES ('environment','development','2026-03-19 16:40:54.061746','2026-03-19 16:40:54.061746');
+INSERT INTO `ar_internal_metadata` VALUES ('environment','development','2026-03-20 07:43:51.265702','2026-03-20 07:43:51.265702');
 /*!40000 ALTER TABLE `ar_internal_metadata` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -220,4 +220,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-19 17:34:51
+-- Dump completed on 2026-03-20 14:09:41

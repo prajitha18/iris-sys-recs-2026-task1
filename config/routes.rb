@@ -2,7 +2,9 @@ Rails.application.routes.draw do
   resources :posts
   devise_for :users
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
-  get "/metrics", to: proc { [200, {}, ["OK"]] }
+  get "/metrics", to: proc {
+    [200, { "Content-Type" => "text/plain" }, ["app_up 1\n"]]
+  }
   # Defines the root path route ("/")
   root "posts#index"
 end

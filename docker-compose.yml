@@ -101,6 +101,34 @@ services:
     networks:
       - monitoring_net
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter
+    container_name: iris-nginx-exporter
+    command:
+      - -nginx.scrape-uri=http://nginx:80/nginx_status
+    networks:
+     - monitoring_net
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: iris-node-exporter
+    networks:
+      monitoring_net:
+        aliases:
+          - node-exporter
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    container_name: iris-cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - monitoring_net
+
 volumes:
   mysql_data:
   nfs_data:
