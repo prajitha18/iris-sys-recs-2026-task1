@@ -425,42 +425,46 @@ Instead, access is restricted via internal network or NGINX proxy.
 
 # Implementation Steps
 
-*Added Prometheus and Grafana services in docker-compose.yml
-*Added exporters:
-*Node Exporter for host metrics
-*cAdvisor for container metrics
-*Created a dedicated network monitoring_net for isolation
-*Configured Prometheus using prometheus.yml with static scrape targets
-*Connected all services to monitoring_net
-*Configured NGINX to route:
-*grafana.localhost → Grafana
- prometheus.localhost → Prometheus
-*Secured Grafana using HTTP Basic Authentication
-*Started services using:
+*  Added Prometheus and Grafana services in docker-compose.yml
+*  Added exporters:
+*  Node Exporter for host metrics
+*  cAdvisor for container metrics
+*  Created a dedicated network monitoring_net for isolation
+*  Configured Prometheus using prometheus.yml with static scrape targets
+*  Connected all services to monitoring_net
+*  Configured NGINX to route:
+*  grafana.localhost → Grafana
+*  prometheus.localhost → Prometheus
+*  Secured Grafana using HTTP Basic Authentication
+*  Started services using:
 ```
 docker-compose up --build
 ```
 Verified metrics collection and dashboards in Grafana
 
 # Debugging & Issue Encountered
- * Issue *: Incorrect Prometheus Targets
+ ** Issue **: Incorrect Prometheus Targets
+ 
 
  Initially, Prometheus was configured with:
 ```
 targets: ['app-1:3000', 'app-2:3000', 'app-3:3000']
 ```
-*Problem*
+**Problem**
 Docker Compose does not guarantee fixed container names
 Prometheus could not consistently scrape metrics
-Solution
+Solution:
+
 
 *Replaced with:*
 ```
 targets: ['app:3000']
 ```
 Why this works
-Docker provides built-in DNS for service names
-app automatically load balances across replicas
+
+
+*  Docker provides built-in DNS for service names
+*  app automatically load balances across replicas
 
 #  Conclusion
 
