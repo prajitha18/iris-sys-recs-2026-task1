@@ -482,3 +482,14 @@ It demonstrates how real systems monitor:
  Applications
 
 All through a **centralized, secure, and scalable approach**.
+
+---
+
+# Screenshots
+![output1](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task--2-Monitoring-Stack/screenshots/Screenshot%202026-03-20%20190553.png?raw=true)
+![output](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task--2-Monitoring-Stack/screenshots/Screenshot%202026-03-20%20190729.png?raw=true)
+![output2](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task--2-Monitoring-Stack/screenshots/Screenshot%202026-03-20%20191530.png?raw=true)
+![output3](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task--2-Monitoring-Stack/screenshots/Screenshot%202026-03-20%20193206.png?raw=true)
+![output4](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task--2-Monitoring-Stack/screenshots/Screenshot%202026-03-21%20201605.png?raw=true)
+
+
