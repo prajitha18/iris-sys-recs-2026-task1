@@ -140,6 +140,11 @@ server_name app.localhost;
 server_name grafana.localhost;
 ```
 
+### Grafana Login
+ Username: admin
+ 
+ Password: admin
+
 ### Decision:
 
 * Separate services via subdomains
