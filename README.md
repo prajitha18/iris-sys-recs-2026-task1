@@ -140,7 +140,7 @@ app:
 
 ## How Consistency is Achieved
 
-* All replicas mount same NFS-backed volume
+* All replicas mount the same shared volume (designed to represent NFS-backed storage)
 * Any write → immediately visible to others
 
 ---
@@ -202,7 +202,7 @@ Then:
 docker exec -it app-2 cat /shared/test.txt
 ```
 
-✅ File still exists
+ File still exists
 
 ---
 
@@ -256,7 +256,7 @@ networks:
 
 ---
 
-# 🚀 Production Improvements
+#  Production Improvements
 
 * Replace NFS container with:
 
@@ -283,8 +283,8 @@ This design demonstrates:
 
 The NFS-based shared storage system ensures:
 
-* ✅ Cross-replica data consistency
-* ✅ Persistence across restarts
-* ✅ Centralized storage management
+*  Cross-replica data consistency
+*  Persistence across restarts
+*  Centralized storage management
 
 
