@@ -1,91 +1,441 @@
-# Dockerized Rails Application Project
-
-This project demonstrates a **complete Dockerized setup** for a Rails application with MySQL, Nginx, load balancing, persistence, and request rate limiting. The project is divided into multiple branches, each focusing on a specific task or feature.  
-
-The main goal is to build a **production-ready environment** for a Rails application using Docker and Docker Compose.
+#  Monitoring Stack (Prometheus + Grafana + System Metrics)
 
 ---
 
-## Project Overview
+#  Objective
 
-The project covers:
+This module implements a **production-grade monitoring system** that:
 
-1. **Rails Application Containerization**  
-   - Pack the Rails app into a Docker container image.  
-   - Launch the app in a container and connect it to a MySQL database container.
-
-2. **MySQL Database Setup**  
-   - Launch MySQL in a separate container.  
-   - Database port is **internal only**, not exposed to the host.  
-   - Enable **persistent storage** for database data.
-
-3. **Application Exposure**  
-   - Rails app exposed to host on **localhost:8080**.  
-
-4. **Nginx Reverse Proxy & Load Balancing**  
-   - Launch an Nginx container to act as a reverse proxy.  
-   - Load balances incoming requests across multiple Rails app containers (3 replicas).  
-   - Nginx exposed at **localhost:80**, Rails app should not be accessed directly.
-
-5. **Persistence**  
-   - Persistent storage for MySQL data and Nginx configuration, so data and config survive container restarts.
-
-6. **Request Rate Limiting**  
-   - Limit the number of requests a client can send to the app using Nginx.  
-   - Prevents abuse or accidental overload.  
-
-7. **Docker Compose Orchestration**  
-   - All containers can be brought up together with **one command**.  
-   - Simplifies management of multiple containers and ensures proper networking.
+* Collects metrics from infrastructure and application layers
+* Visualizes system health in real-time dashboards
+* Ensures monitoring services are **secure and not publicly exposed**
 
 ---
 
-## Branch Overview
+#  Monitoring Architecture
 
-| Branch Name            | Task / Feature |
-|------------------------|----------------|
-| `rails-docker`         | Containerize Rails application and run in Docker. |
-| `mysql-container`      | Set up MySQL container with internal-only networking and persistence. |
-| `nginx-reverse-proxy`  | Configure Nginx as reverse proxy for Rails app. |
-| `load-balancing`       | Launch multiple Rails app containers and configure Nginx load balancing. |
-| `persistence`          | Add persistent storage for MySQL and Nginx. |
-| `docker-compose`       | Orchestrate all containers using Docker Compose. |
-| `rate-limit`           | Add request rate limiting in Nginx. |
+```id="m2r6yy"
+                ┌──────────────┐
+                │ Node Exporter│
+                └──────┬───────┘
+                       │
+                ┌──────▼───────┐
+                │   cAdvisor   │
+                └──────┬───────┘
+                       │
+   ┌────────────┐      │       ┌────────────┐
+   │   NGINX    │──────┼──────▶│ Prometheus │
+   └────────────┘      │       └──────┬─────┘
+                       │              │
+                ┌──────▼───────┐      │
+                │ App Replicas │──────┘
+                └──────────────┘
+                              ↓
+                        Grafana (via NGINX)
+```
 
 ---
 
-## Accessing the Application
+#  Components
 
-- **Via Nginx (recommended):** [http://localhost](http://localhost)  
-- **Direct Rails app (internal, not recommended):** localhost:8080 (for testing)  
-- **Database:** Internal container access only  
+## 1. Prometheus (Metrics Collector)
+
+* Scrapes metrics from:
+
+  * Node Exporter (system metrics)
+  * cAdvisor (container metrics)
+  * NGINX (request metrics)
+  * App replicas
 
 ---
 
-## Quick Start
+## 2. Grafana (Visualization Layer)
 
-1. Build and launch all containers with Docker Compose:
+* Connects to Prometheus
+* Displays dashboards for:
 
-```bash
-docker-compose up -d
+  * CPU & memory usage
+  * Container restarts
+  * Request rate
+  * Error rate
+
+---
+
+## 3. Exporters
+
+### Node Exporter
+
+* Provides host-level metrics
+* CPU, memory, disk, network
+
+---
+
+### cAdvisor
+
+* Provides container-level metrics
+* CPU, memory usage per container
+* Container lifecycle (restarts, uptime)
+
+---
+
+### NGINX Metrics
+
+* Request counts
+* Status codes
+* Traffic patterns
+
+---
+
+#  Network Design (Critical)
+
+## Monitoring Network
+
+```yaml id="0e5n0t"
+networks:
+  monitoring_net:
 ```
-2. Stop all containers:
+
+---
+
+##  Design Decisions
+
+### 1. Dedicated Monitoring Network
+
+* Prometheus, Grafana, exporters all run in `monitoring_net`
+
+ because:
+
+* Isolates monitoring traffic from application traffic
+* Prevents unnecessary exposure
+* Improves security
+
+---
+
+### 2. No Public Port Exposure
+
+ NOT done:
+
+```yaml id="h9g3pq"
+ports:
+  - "9090:9090"
 ```
-docker-compose down
+
+ Instead:
+
+* Access only via NGINX reverse proxy
+
+---
+
+## Why?
+
+* Prevents direct access to monitoring tools
+* Centralizes access control in NGINX
+* Enables authentication
+
+ **Production best practice**
+
+---
+
+#  Secure Access via NGINX
+
+## Grafana Routing
+
+```nginx id="8jco8g"
+server {
+    listen 80;
+    server_name grafana.localhost;
+
+    location / {
+        auth_basic "Restricted";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+
+        proxy_pass http://grafana:3000;
+    }
+}
 ```
 
-3. Reload Nginx after config changes:
+---
+
+## Design Decisions
+
+### 1. Why Proxy via NGINX?
+
+* Single entry point for all services
+* Easier to apply security policies
+
+---
+
+### 2. Why Basic Auth?
+
+* Lightweight protection
+* No need to modify Grafana config
+
+---
+
+### 3. Why Not Expose Grafana Directly?
+
+* Avoids unauthorized access
+* Reduces attack surface
+
+---
+
+#  Prometheus Configuration
+
+## Example `prometheus.yml`
+
+```yaml id="n37yuk"
+scrape_configs:
+
+  # App replicas
+  - job_name: 'app'
+    static_configs:
+      - targets: ['app:3000']
+
+  # Node Exporter
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # cAdvisor
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # NGINX metrics
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx:80']
 ```
-docker exec -it nginx-container nginx -s reload
+
+---
+
+##  Design Decisions
+
+### 1. Static Config vs Service Discovery
+
+* Static config used for simplicity
+
+ Trade-off:
+
+* Easier debugging
+* Less dynamic
+
+---
+
+### 2. Scraping Multiple Layers
+
+| Layer       | Tool          |
+| ----------- | ------------- |
+| Host        | Node Exporter |
+| Containers  | cAdvisor      |
+| Proxy       | NGINX         |
+| Application | App           |
+
+ Gives **full system observability**
+
+---
+
+#  Grafana Dashboards
+
+## Metrics Visualized
+
+### 1. CPU & Memory Usage
+
+* From Node Exporter + cAdvisor
+* Shows system and container load
+
+---
+
+### 2. Container Restarts
+
+* From cAdvisor
+* Detects instability
+
+---
+
+### 3. Request Rate
+
+* From NGINX
+* Shows traffic trends
+
+---
+
+### 4. Error Rate
+
+* Based on HTTP status codes
+* Detects failures
+
+---
+
+## Why These Metrics?
+
+* Cover both **infrastructure + application health**
+* Provide actionable insights
+
+---
+
+#  Observability Design Philosophy
+
+This stack follows:
+
+### 1. Multi-Layer Monitoring
+
+* Infrastructure + container + app
+
+---
+
+### 2. Centralized Metrics
+
+* Prometheus aggregates everything
+
+---
+
+### 3. Visual Insights
+
+* Grafana dashboards
+
+---
+
+### 4. Secure Access
+
+* No direct exposure
+* Controlled via NGINX
+
+---
+
+#  Testing
+
+## Verify Prometheus
+
+* Check targets:
+
 ```
-### References
+http://prometheus.localhost
+```
 
-Docker Documentation
+(via NGINX if configured)
 
-Docker Compose Documentation
+---
 
-Nginx Limit Request Module
+## Verify Grafana
 
-Rails Guides
+```
+http://grafana.localhost
+```
 
-### Result: A fully Dockerized, load-balanced, persistent Rails application setup with Nginx reverse proxy and request rate limiting.
+* Should require authentication
+
+---
+
+## Validate Metrics
+
+* CPU usage visible
+* Containers listed
+* Requests tracked
+
+---
+
+#  Trade-offs & Limitations
+
+| Decision                   | Trade-off            | Justification          |
+| -------------------------- | -------------------- | ---------------------- |
+| Static scrape config       | Not dynamic          | Simpler setup          |
+| Basic Auth                 | Not enterprise-grade | Lightweight            |
+| Single Prometheus instance | No HA                | Acceptable for project |
+
+---
+
+#  Production Improvements
+
+* Add service discovery (Kubernetes)
+* Add alerting (Alertmanager)
+* Use OAuth instead of Basic Auth
+* Add TLS (HTTPS)
+* Enable long-term storage
+
+---
+
+## Why These Metrics Matter
+
+- CPU & Memory → Detect system overload and scaling needs  
+- Container Restarts → Identify crashes and instability  
+- Request Rate → Understand traffic patterns and load  
+- Error Rate → Detect failures and user-impacting issues  
+
+These metrics together provide a complete view of:
+- System health
+- Application performance
+- User experience impact
+---
+## NGINX Metrics Collection
+
+NGINX metrics are exposed using the `stub_status` module.
+
+Example:
+
+location /nginx_status {
+    stub_status;
+    allow 127.0.0.1;
+    deny all;
+}
+
+Prometheus scrapes this endpoint to collect:
+- Active connections
+- Requests handled
+- Reading/Writing/Waiting states
+---
+
+## Application Metrics
+
+The application exposes metrics via an HTTP endpoint (e.g., `/metrics`).
+
+This can be implemented using:
+- Prometheus client libraries (Ruby, Python, etc.)
+
+These metrics include:
+- Request count
+- Response time
+- Error count
+---
+
+## Failure Handling
+
+If one component fails:
+
+- App failure → NGINX routes to healthy replicas  
+- Exporter failure → Partial metrics loss, system still runs  
+- Prometheus failure → Metrics temporarily unavailable  
+- Grafana failure → Visualization unavailable but data still collected  
+
+This ensures system continues functioning even under partial failures.
+
+---
+
+## Why Prometheus is NOT Exposed
+
+Prometheus provides internal system metrics and should not be publicly accessible because:
+
+- It exposes infrastructure details  
+- It can be used for reconnaissance attacks  
+- It is not designed for public access  
+
+Instead, access is restricted via internal network or NGINX proxy.
+
+---
+
+#  Conclusion
+
+This monitoring stack ensures:
+
+*  Full system visibility
+*  Real-time performance tracking
+*  Secure access control
+*  Production-style observability
+
+It demonstrates how real systems monitor:
+
+ Infrastructure
+ Containers
+ Applications
+
+All through a **centralized, secure, and scalable approach**.
