@@ -34,15 +34,18 @@ This module implements **shared storage across multiple application replicas** u
 ## 1. NFS Server Container
 
 ```yaml
-nfs:
-  image: itsthenetwork/nfs-server-alpine
-  privileged: true
-  environment:
-    SHARED_DIRECTORY: /exports
-  volumes:
-    - nfs_data:/exports
-  networks:
-    - storage_net
+
+  nfs:
+    image: itsthenetwork/nfs-server-alpine
+    container_name: iris-nfs
+    privileged: true
+    environment:
+      SHARED_DIRECTORY: /exports
+    volumes:
+      - nfs_data:/exports
+    networks:
+      - storage_net
+
 ```
 
 ---
