@@ -1,91 +1,318 @@
-# Dockerized Rails Application Project
+#  IRIS Sys Recs 2026 Task -2 - Production-Grade Docker Infrastructure
 
-This project demonstrates a **complete Dockerized setup** for a Rails application with MySQL, Nginx, load balancing, persistence, and request rate limiting. The project is divided into multiple branches, each focusing on a specific task or feature.  
+##  What This Project Demonstrates
 
-The main goal is to build a **production-ready environment** for a Rails application using Docker and Docker Compose.
+This repository is not just a Docker setup ,
+it is a **mini production infrastructure** designed with real-world backend engineering principles:
 
----
-
-## Project Overview
-
-The project covers:
-
-1. **Rails Application Containerization**  
-   - Pack the Rails app into a Docker container image.  
-   - Launch the app in a container and connect it to a MySQL database container.
-
-2. **MySQL Database Setup**  
-   - Launch MySQL in a separate container.  
-   - Database port is **internal only**, not exposed to the host.  
-   - Enable **persistent storage** for database data.
-
-3. **Application Exposure**  
-   - Rails app exposed to host on **localhost:8080**.  
-
-4. **Nginx Reverse Proxy & Load Balancing**  
-   - Launch an Nginx container to act as a reverse proxy.  
-   - Load balances incoming requests across multiple Rails app containers (3 replicas).  
-   - Nginx exposed at **localhost:80**, Rails app should not be accessed directly.
-
-5. **Persistence**  
-   - Persistent storage for MySQL data and Nginx configuration, so data and config survive container restarts.
-
-6. **Request Rate Limiting**  
-   - Limit the number of requests a client can send to the app using Nginx.  
-   - Prevents abuse or accidental overload.  
-
-7. **Docker Compose Orchestration**  
-   - All containers can be brought up together with **one command**.  
-   - Simplifies management of multiple containers and ensures proper networking.
+*  Secure by default (zero unnecessary exposure)
+*  Horizontally scalable (multi-replica architecture)
+*  Fully observable (metrics + dashboards)
+*  Persistent (shared storage + backups)
+*  Controlled entry point (reverse proxy gateway)
 
 ---
 
-## Branch Overview
+##  Architecture Philosophy
 
-| Branch Name            | Task / Feature |
-|------------------------|----------------|
-| `rails-docker`         | Containerize Rails application and run in Docker. |
-| `mysql-container`      | Set up MySQL container with internal-only networking and persistence. |
-| `nginx-reverse-proxy`  | Configure Nginx as reverse proxy for Rails app. |
-| `load-balancing`       | Launch multiple Rails app containers and configure Nginx load balancing. |
-| `persistence`          | Add persistent storage for MySQL and Nginx. |
-| `docker-compose`       | Orchestrate all containers using Docker Compose. |
-| `rate-limit`           | Add request rate limiting in Nginx. |
+This system is built on **three core ideas**:
 
----
+### 1. **Everything is Private by Default**
 
-## Accessing the Application
+No service is exposed unless absolutely necessary.
 
-- **Via Nginx (recommended):** [http://localhost](http://localhost)  
-- **Direct Rails app (internal, not recommended):** localhost:8080 (for testing)  
-- **Database:** Internal container access only  
+ Only **NGINX** is public
+ Everything else lives in isolated internal networks
 
 ---
 
-## Quick Start
+### 2. **Separation of Concerns**
 
-1. Build and launch all containers with Docker Compose:
+Each responsibility is isolated:
+
+* Traffic handling : NGINX
+* Business logic : App replicas
+* Data : MySQL
+* Storage : NFS
+* Observability : Prometheus + Grafana
+
+---
+
+### 3. **Least Privilege Networking**
+
+Every container can only talk to what it *must* talk to — nothing more.
+
+---
+
+##  System Architecture
+
+```
+                 INTERNET
+                     │
+                     ▼
+              ┌────────────┐
+              │   NGINX    │  ← Only public entry
+              └────┬───────┘
+                   │
+        ┌──────────┼──────────┐
+        ▼          ▼          ▼
+     app1       app2       app3   ← Load balanced replicas
+        │          │          │
+        └──────┬───┴───┬──────┘
+               ▼       ▼
+            MySQL     NFS
+                         │
+                     Backup
+
+Monitoring Layer:
+Prometheus <-- scrapes everything
+Grafana <-- visualizes (via NGINX only)
+```
+
+---
+
+##  Network Design (Critical Decision)
+
+| Network         | Who Lives Here                 | Why                   |
+| --------------- | ------------------------------ | --------------------- |
+| **public**      | NGINX                          | External entry only   |
+| **application** | NGINX, App replicas, MySQL     | Backend communication |
+| **storage**     | App replicas, NFS, Backup      | Shared file access    |
+| **monitoring**  | Prometheus, Grafana, exporters | Metrics pipeline      |
+
+---
+
+##  Multi-Network Strategy (Important Insight)
+
+Some containers connect to **multiple networks**:
+
+* **NGINX**
+
+  * public --> receives traffic
+  * application --> forwards traffic
+
+* **App replicas**
+
+  * application --> serve requests
+  * storage --> read/write files
+  * monitoring --> expose metrics
+
+* **Prometheus**
+
+  * monitoring --> core system
+  * application --> scrape app metrics
+
+ This is what makes the system **connected yet secure**
+
+---
+
+##  Reverse Proxy (NGINX) – The Brain
+
+###  Load Balancing
+
+* Distributes traffic across all 3 replicas
+* Ensures scalability and fault tolerance
+
+---
+
+###  Health Checks + Failover
+
+* Automatically removes unhealthy containers
+* Keeps system available even if one replica crashes
+
+---
+
+###  Zero-Downtime Reload
 
 ```bash
-docker-compose up -d
-```
-2. Stop all containers:
-```
-docker-compose down
+nginx -s reload
 ```
 
-3. Reload Nginx after config changes:
+* Updates config without killing active users
+
+---
+
+###  Rate Limiting
+
+* Protects system from abuse
+* Returns **429 Too Many Requests**
+
+---
+
+###  Smart Routing (Subdomains)
+
+| Route                | Destination |
+| -------------------- | ----------- |
+| app.localhost        | Application |
+| grafana.localhost    | Grafana     |
+| prometheus.localhost | Prometheus  |
+
+---
+
+###  Authentication Layer
+
+* Grafana & Prometheus protected using **Basic Auth**
+
+ Important:
+Security is enforced **at the gateway**, not inside containers
+
+---
+
+##  Shared Storage (NFS) – Horizontal Scaling Backbone
+
+### Why NFS?
+
+In multi-replica systems:
+
+* Each container is isolated
+* Without shared storage → inconsistent data
+
+### Solution:
+
+* Central NFS server
+* All replicas mount the same directory
+
+---
+
+###  Proven Guarantees
+
+* Upload from app1 → visible in app2/app3
+* Data survives container restarts
+* Backup service reads same data
+
+---
+
+##  Monitoring Stack – Full Observability
+
+###  Prometheus Collects:
+
+*  Node Exporter → system stats
+*  cAdvisor → container stats
+*  NGINX → request metrics
+*  App → custom metrics
+
+---
+
+### Grafana Visualizes:
+
+* CPU usage
+* Memory usage
+* Container restarts
+* Request rate
+* Error rate
+
+---
+
+###  Secure Access
+
+* No direct ports exposed
+* Access only via:
+
+  * `grafana.localhost`
+  * `prometheus.localhost`
+
+---
+
+##  Backup System – Data Safety Layer
+
+* Periodically backs up NFS data
+* Ensures recovery from failures
+
+ Without this , NFS becomes a single point of failure
+
+---
+
+##  Key Engineering Decisions (What Makes This Strong)
+
+###  1. Zero Trust Exposure
+
+* Only NGINX is public
+* Everything else is hidden
+
+---
+
+###  2. Modular Design
+
+* Each component replaceable independently
+
+---
+
+###  3. Observability First
+
+* Metrics are not optional — built-in
+
+---
+
+###  4. Fault Tolerance
+
+* Multi-replica + failover
+
+---
+
+###  5. Real-World Alignment
+
+This architecture mirrors:
+
+* Microservices infra
+* Kubernetes patterns (simplified)
+* Cloud production systems
+
+---
+
+##  Branch Strategy
+
+Each task is implemented independently:
+
+| Branch          | Focus                   |
+| --------------- | ----------------------- |
+| `main`          | overview  |
+| `reverse-proxy` | NGINX config            |
+| `nfs-storage`   | Shared storage          |
+| `monitoring`    | Prometheus + Grafana    |
+| `backup`        | Backup service          |
+
+ Each branch contains:
+
+* Config files
+* Screenshots
+* Step-by-step explanation
+
+---
+
+
+
+##  Run the Project
+
+```bash
+docker-compose up --build
 ```
-docker exec -it nginx-container nginx -s reload
-```
-### References
 
-Docker Documentation
+### Access:
 
-Docker Compose Documentation
+*  http://app.localhost
+*  http://grafana.localhost (auth required)
 
-Nginx Limit Request Module
+---
 
-Rails Guides
+##  Final Thoughts
 
-### Result: A fully Dockerized, load-balanced, persistent Rails application setup with Nginx reverse proxy and request rate limiting.
+
+✔ Secure network isolation
+✔ Production-grade reverse proxy
+✔ Distributed storage system
+✔ Full observability stack
+✔ Automated data protection
+
+---
+
+##  If You’re Reviewing This
+
+This system reflects:
+
+* Strong understanding of Docker networking
+* Real-world backend architecture thinking
+* Security-first mindset
+* Scalability and reliability principles
+
+---
+
