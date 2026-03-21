@@ -50,7 +50,7 @@ This module implements **shared storage across multiple application replicas** u
 
 ---
 
-##  Design Decisions (Very Important)
+##  Design Decisions 
 
 ### 1. Why a Dedicated NFS Container?
 
@@ -276,7 +276,36 @@ This design demonstrates:
 * Shared filesystem across distributed services
 * Persistence beyond container lifecycle
 * Real-world storage architecture patterns
+---
+## Implementation Steps (Execution Flow)
+ * Defined NFS server service in docker-compose.yml with /exports directory
+ * Created a named volume nfs_data for persistent storage
+ * Mounted the same volume into all application replicas at /shared
+ * Connected services through storage_net to isolate storage traffic
+ * Built and started services using:
+```
+ docker-compose up --build --scale app=3
+```
+ * Verified container status using:
+ ```
+ docker ps
+```
+ * Tested shared storage using file creation and cross-container access
+---
+## Debugging & Issue Resolution
 
+During implementation, the following issue was encountered:
+ *Issue*
+    Containers failed to start due to NFS volume mount errors
+    Error: connection refused during volume mount
+*Root Cause*
+           Docker volume driver could not resolve the NFS container hostname
+           Caused circular dependency between volume mount and container startup
+*Resolution*
+           Removed NFS driver configuration
+           Switched to Docker-managed volume
+           Retained NFS container for architectural completeness
+           
 ---
 
 #  Conclusion
