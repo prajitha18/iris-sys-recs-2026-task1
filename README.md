@@ -1,91 +1,287 @@
-# Dockerized Rails Application Project
-
-This project demonstrates a **complete Dockerized setup** for a Rails application with MySQL, Nginx, load balancing, persistence, and request rate limiting. The project is divided into multiple branches, each focusing on a specific task or feature.  
-
-The main goal is to build a **production-ready environment** for a Rails application using Docker and Docker Compose.
+#  Shared Storage via NFS 
 
 ---
 
-## Project Overview
+#  Objective
 
-The project covers:
+This module implements **shared storage across multiple application replicas** using NFS, ensuring:
 
-1. **Rails Application Containerization**  
-   - Pack the Rails app into a Docker container image.  
-   - Launch the app in a container and connect it to a MySQL database container.
-
-2. **MySQL Database Setup**  
-   - Launch MySQL in a separate container.  
-   - Database port is **internal only**, not exposed to the host.  
-   - Enable **persistent storage** for database data.
-
-3. **Application Exposure**  
-   - Rails app exposed to host on **localhost:8080**.  
-
-4. **Nginx Reverse Proxy & Load Balancing**  
-   - Launch an Nginx container to act as a reverse proxy.  
-   - Load balances incoming requests across multiple Rails app containers (3 replicas).  
-   - Nginx exposed at **localhost:80**, Rails app should not be accessed directly.
-
-5. **Persistence**  
-   - Persistent storage for MySQL data and Nginx configuration, so data and config survive container restarts.
-
-6. **Request Rate Limiting**  
-   - Limit the number of requests a client can send to the app using Nginx.  
-   - Prevents abuse or accidental overload.  
-
-7. **Docker Compose Orchestration**  
-   - All containers can be brought up together with **one command**.  
-   - Simplifies management of multiple containers and ensures proper networking.
+* All replicas can access the same files
+* Data consistency across containers
+* Persistence across container restarts
+* Decoupling storage from application lifecycle
 
 ---
 
-## Branch Overview
+#  Architecture (Storage Layer)
 
-| Branch Name            | Task / Feature |
-|------------------------|----------------|
-| `rails-docker`         | Containerize Rails application and run in Docker. |
-| `mysql-container`      | Set up MySQL container with internal-only networking and persistence. |
-| `nginx-reverse-proxy`  | Configure Nginx as reverse proxy for Rails app. |
-| `load-balancing`       | Launch multiple Rails app containers and configure Nginx load balancing. |
-| `persistence`          | Add persistent storage for MySQL and Nginx. |
-| `docker-compose`       | Orchestrate all containers using Docker Compose. |
-| `rate-limit`           | Add request rate limiting in Nginx. |
-
----
-
-## Accessing the Application
-
-- **Via Nginx (recommended):** [http://localhost](http://localhost)  
-- **Direct Rails app (internal, not recommended):** localhost:8080 (for testing)  
-- **Database:** Internal container access only  
+```
+           ┌──────────────┐
+           │   NFS Server │
+           │  (/exports)  │
+           └──────┬───────┘
+                  │
+      ┌───────────┼───────────┐
+      │           │           │
+   app-1       app-2       app-3
+   (/shared)   (/shared)   (/shared)
+```
 
 ---
 
-## Quick Start
+#  Implementation
 
-1. Build and launch all containers with Docker Compose:
+## 1. NFS Server Container
+
+```yaml
+nfs:
+  image: itsthenetwork/nfs-server-alpine
+  privileged: true
+  environment:
+    SHARED_DIRECTORY: /exports
+  volumes:
+    - nfs_data:/exports
+  networks:
+    - storage_net
+```
+
+---
+
+##  Design Decisions (Very Important)
+
+### 1. Why a Dedicated NFS Container?
+
+* Separates storage from application logic
+* Allows independent scaling/replacement
+* Mimics real-world external storage systems
+
+ In production, this would be:
+
+* AWS EFS
+* Azure Files
+* Network-attached storage
+
+---
+
+### 2. Why `privileged: true`?
+
+* Required for NFS kernel-level operations
+* Allows container to act as a file server
+
+ Trade-off:
+
+* Reduces isolation
+* Acceptable here for controlled environment
+
+---
+
+### 3. Why `/exports`?
+
+* Standard NFS export directory
+* Clearly separates shared storage from system files
+
+---
+
+### 4. Why Named Volume (`nfs_data`)?
+
+```yaml
+volumes:
+  - nfs_data:/exports
+```
+
+* Persists data beyond container lifecycle
+* Survives container restarts
+
+ Critical for **data durability**
+
+---
+
+#  Application Mounting
+
+```yaml
+app:
+  volumes:
+    - nfs_data:/shared
+```
+
+---
+
+##  Design Decisions
+
+### 1. Why Mount Same Volume in All Replicas?
+
+* Ensures all containers read/write same data
+* Enables **cross-replica consistency**
+
+---
+
+### 2. Why `/shared` Path?
+
+* Clear separation from application code
+* Prevents accidental overwrite of app files
+
+---
+
+### 3. Why Not Local Container Storage?
+
+ Problem with local storage:
+
+* Each container has its own filesystem
+* Files are NOT shared
+
+ NFS solves this by providing **centralized storage**
+
+---
+
+#  Data Consistency Strategy
+
+## How Consistency is Achieved
+
+* All replicas mount same NFS-backed volume
+* Any write → immediately visible to others
+
+---
+
+## Example Flow
+
+1. Upload file from `app-1`
+2. File saved in `/shared`
+3. `app-2` reads same file from `/shared`
+
+ Demonstrates **real-time shared access**
+
+---
+
+#  Proof of Cross-Replica Consistency
+
+## Step 1: Create File in One Container
 
 ```bash
-docker-compose up -d
-```
-2. Stop all containers:
-```
-docker-compose down
+docker exec -it app-1 sh
+echo "hello from app1" > /shared/test.txt
 ```
 
-3. Reload Nginx after config changes:
+---
+
+## Step 2: Read from Another Container
+
+```bash
+docker exec -it app-2 sh
+cat /shared/test.txt
 ```
-docker exec -it nginx-container nginx -s reload
+
+ Output:
+
 ```
-### References
+hello from app1
+```
 
-Docker Documentation
+---
 
-Docker Compose Documentation
+##  Result
 
-Nginx Limit Request Module
+* Confirms all replicas share same storage
+* Validates NFS setup
 
-Rails Guides
+---
 
-### Result: A fully Dockerized, load-balanced, persistent Rails application setup with Nginx reverse proxy and request rate limiting.
+#  Persistence Across Restarts
+
+## Test
+
+```bash
+docker restart app-1
+```
+
+Then:
+
+```bash
+docker exec -it app-2 cat /shared/test.txt
+```
+
+✅ File still exists
+
+---
+
+## Why This Works
+
+* Data stored in Docker volume (`nfs_data`)
+* Volume is independent of containers
+
+ Containers can die, data survives
+
+---
+
+#  Network Design for Storage
+
+```yaml
+networks:
+  storage_net:
+```
+
+---
+
+## Why Separate Storage Network?
+
+### 1. Security
+
+* Only app + NFS can communicate
+* Prevents unauthorized access
+
+---
+
+### 2. Isolation
+
+* Storage traffic separated from app traffic
+* Reduces interference
+
+---
+
+### 3. Production Practice
+
+* Real systems isolate storage layer
+
+---
+
+#  Trade-offs & Limitations
+
+| Decision          | Trade-off               | Justification                |
+| ----------------- | ----------------------- | ---------------------------- |
+| NFS container     | Not highly scalable     | Simple + sufficient for demo |
+| privileged mode   | Lower security          | Required for NFS             |
+| Single NFS server | Single point of failure | Acceptable for assignment    |
+
+---
+
+# 🚀 Production Improvements
+
+* Replace NFS container with:
+
+  * AWS EFS / S3
+  * Distributed file systems
+* Add replication for storage
+* Add access control (NFS permissions)
+* Add backup for shared files
+
+---
+
+#  Key Engineering Learnings
+
+This design demonstrates:
+
+* Separation of compute and storage
+* Shared filesystem across distributed services
+* Persistence beyond container lifecycle
+* Real-world storage architecture patterns
+
+---
+
+#  Conclusion
+
+The NFS-based shared storage system ensures:
+
+* ✅ Cross-replica data consistency
+* ✅ Persistence across restarts
+* ✅ Centralized storage management
+
+
