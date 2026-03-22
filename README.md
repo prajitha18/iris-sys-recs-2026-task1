@@ -316,4 +316,8 @@ The NFS-based shared storage system ensures:
 *  Persistence across restarts
 *  Centralized storage management
 
+---
+
+# screenshot
+![output](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Shared-Storage-via-NFS/screenshots/Screenshot%202026-03-19%20225530.png)
 
