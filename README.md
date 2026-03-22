@@ -1,91 +1,150 @@
-# Dockerized Rails Application Project
+#  Automated Backup System
 
-This project demonstrates a **complete Dockerized setup** for a Rails application with MySQL, Nginx, load balancing, persistence, and request rate limiting. The project is divided into multiple branches, each focusing on a specific task or feature.  
-
-The main goal is to build a **production-ready environment** for a Rails application using Docker and Docker Compose.
-
----
-
-## Project Overview
-
-The project covers:
-
-1. **Rails Application Containerization**  
-   - Pack the Rails app into a Docker container image.  
-   - Launch the app in a container and connect it to a MySQL database container.
-
-2. **MySQL Database Setup**  
-   - Launch MySQL in a separate container.  
-   - Database port is **internal only**, not exposed to the host.  
-   - Enable **persistent storage** for database data.
-
-3. **Application Exposure**  
-   - Rails app exposed to host on **localhost:8080**.  
-
-4. **Nginx Reverse Proxy & Load Balancing**  
-   - Launch an Nginx container to act as a reverse proxy.  
-   - Load balances incoming requests across multiple Rails app containers (3 replicas).  
-   - Nginx exposed at **localhost:80**, Rails app should not be accessed directly.
-
-5. **Persistence**  
-   - Persistent storage for MySQL data and Nginx configuration, so data and config survive container restarts.
-
-6. **Request Rate Limiting**  
-   - Limit the number of requests a client can send to the app using Nginx.  
-   - Prevents abuse or accidental overload.  
-
-7. **Docker Compose Orchestration**  
-   - All containers can be brought up together with **one command**.  
-   - Simplifies management of multiple containers and ensures proper networking.
+##  Overview
+This project includes an automated backup service that periodically:
+- Dumps the MySQL database
+- Archives shared application data from NFS storage
+- Maintains a retention policy to keep only the latest backups
 
 ---
 
-## Branch Overview
+##  Components Used
 
-| Branch Name            | Task / Feature |
-|------------------------|----------------|
-| `rails-docker`         | Containerize Rails application and run in Docker. |
-| `mysql-container`      | Set up MySQL container with internal-only networking and persistence. |
-| `nginx-reverse-proxy`  | Configure Nginx as reverse proxy for Rails app. |
-| `load-balancing`       | Launch multiple Rails app containers and configure Nginx load balancing. |
-| `persistence`          | Add persistent storage for MySQL and Nginx. |
-| `docker-compose`       | Orchestrate all containers using Docker Compose. |
-| `rate-limit`           | Add request rate limiting in Nginx. |
+- **MySQL Client (`mysqldump`)** → for database backups  
+- **Tar Utility (`tar`)** → for compressing shared storage  
+- **Docker Volume (NFS)** → source of persistent shared data  
+- **Alpine Linux Container** → lightweight backup service  
 
 ---
 
-## Accessing the Application
+##  How It Works
 
-- **Via Nginx (recommended):** [http://localhost](http://localhost)  
-- **Direct Rails app (internal, not recommended):** localhost:8080 (for testing)  
-- **Database:** Internal container access only  
+The backup service runs inside a container and executes a loop:
+
+1. Waits for MySQL to become available  
+2. Generates a timestamp  
+3. Dumps the database  
+4. Archives shared storage  
+5. Deletes old backups (keeps latest 5)  
+6. Repeats every 5 minutes  
 
 ---
 
-## Quick Start
+##  Backup Workflow
 
-1. Build and launch all containers with Docker Compose:
+[Start]
+↓
+Wait for MySQL
+↓
+Create Timestamp
+↓
+Dump MySQL → db_<timestamp>.sql
+↓
+Archive NFS → files_<timestamp>.tar.gz
+↓
+Delete old backups (keep last 5)
+↓
+Sleep (5 min)
+↓
+Repeat
 
-```bash
-docker-compose up -d
+---
+
+## Types of Backups
+ **Database Backup**
+ 
+File format: .sql
+
+Created using mysqldump
+
+Contains:
+
+Table structure
+
+Data (INSERT statements)
+
+**Storage Backup**
+
+File format: .tar.gz
+
+Contains:
+
+Files from shared NFS volume
+
+Uploaded assets / app storage
+
+---
+
+## Retention Policy
 ```
-2. Stop all containers:
+ls -tp | tail -n +6 | xargs -r rm -f --
 ```
-docker-compose down
+Keeps only the latest 5 backups
+
+Automatically deletes older ones
+
+## Verification Steps
+
+1. Check backup logs
 ```
-
-3. Reload Nginx after config changes:
+docker logs -f iris-backup
 ```
-docker exec -it nginx-container nginx -s reload
+Expected output:
 ```
-### References
+=== BACKUP START ===
+=== BACKUP DONE ===
+```
+2. Verify SQL file is not empty
+```
+type backups/db_<timestamp>.sql
+```
+Should contain:
+```
+CREATE TABLE ...
+INSERT INTO ...
+```
+3. Extract storage backup
+```
+tar -xvf backups/files_<timestamp>.tar.gz
+```
+## Design Decisions
 
-Docker Documentation
+Isolated container → avoids affecting main app
 
-Docker Compose Documentation
+Volume mounting → ensures access to shared storage
 
-Nginx Limit Request Module
+Loop-based execution → simple cron alternative
 
-Rails Guides
+Retention policy → prevents storage overflow
 
-### Result: A fully Dockerized, load-balanced, persistent Rails application setup with Nginx reverse proxy and request rate limiting.
+Network separation → secure DB access
+
+---
+
+## Notes
+
+Backup runs every 5 minutes
+
+MySQL must be reachable via service name db
+
+Data persists even if containers restart
+
+---
+
+## Outcome
+
+This backup system ensures:
+
+ Data safety
+ Automatic recovery support
+ Minimal manual intervention
+ Production-like reliability
+
+ ---
+
+ # Screenshot
+ ![output]()
+ ![output1]()
+ ![output2]()
+ ![output3]()
+ 
