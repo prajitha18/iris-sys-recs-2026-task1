@@ -386,4 +386,14 @@ This project demonstrates:
 * Real-world DevOps practices
 * Scalable and secure architecture
 
+---
+
+# Screenshot
+![output1](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Reverse-Proxy%2C-Load-Balancing-%26-Access-Control/screenshots/Screenshot%202026-03-19%20012931.png)
+![output2](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Reverse-Proxy%2C-Load-Balancing-%26-Access-Control/screenshots/Screenshot%202026-03-18%20220503.png)
+![output2](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Reverse-Proxy%2C-Load-Balancing-%26-Access-Control/screenshots/Screenshot%202026-03-11%20184313.png)
+![output3](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Reverse-Proxy%2C-Load-Balancing-%26-Access-Control/screenshots/Screenshot%202026-03-11%20193929.png)
+![output4](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Reverse-Proxy%2C-Load-Balancing-%26-Access-Control/screenshots/Screenshot%202026-03-14%20151307.png)
+![output5](https://github.com/prajitha18/iris-sys-recs-2026-task1/blob/Task-2-Reverse-Proxy%2C-Load-Balancing-%26-Access-Control/screenshots/Screenshot%202026-03-14%20151658.png)
+
 
