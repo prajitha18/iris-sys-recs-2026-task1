@@ -1,4 +1,4 @@
-version: "3.9"
+
 
 services:
 
@@ -44,8 +44,9 @@ services:
       - storage_net
 
   db:
-    image: mysql:8
+    image: mysql:8.0
     container_name: iris-mysql
+    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: app_db
@@ -66,25 +67,49 @@ services:
       - storage_net
 
   backup:
-    image: mysql:8
+    image: alpine:3.19
     container_name: iris-backup
+
+    environment:
+      MYSQL_DATABASE: app_db
+    volumes:
+      - nfs_data:/data
+      - ./backups:/backup
     depends_on:
       - db
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-    volumes:
-      - ./backups:/backup
+      - nfs
+    networks:
+      - storage_net
+      - app_net
     command: >
       sh -c "
+      apk add --no-cache mysql-client tar;
+
+      echo 'Waiting for MySQL...';
+      until mysqladmin ping -h db -u root -proot --silent; do
+        sleep 3;
+      done;
+
+      echo 'MySQL is UP';
+
       while true; do
-        mysqldump -h db -uroot -proot app_db > /backup/backup.sql;
-        echo 'Backup completed';
-        sleep 60;
+        TIMESTAMP=$$(date +%F_%H-%M-%S);
+
+        echo '=== BACKUP START ===';
+
+        mysqldump -h db -u root -proot app_db > /backup/db_$$TIMESTAMP.sql;
+
+        tar czf /backup/files_$$TIMESTAMP.tar.gz -C /data .;
+
+        cd /backup && ls -tp | tail -n +6 | xargs -r rm -f --;
+
+        echo '=== BACKUP DONE ===';
+
+        sleep 300;
       done
       "
-    networks:
-      - app_net
-      - storage_net
+
+
 
   prometheus:
     image: prom/prometheus
@@ -107,7 +132,7 @@ services:
     command:
       - -nginx.scrape-uri=http://nginx:80/nginx_status
     networks:
-     - monitoring_net
+      - monitoring_net
 
   node-exporter:
     image: prom/node-exporter
