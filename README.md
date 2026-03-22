@@ -33,19 +33,33 @@ The backup service runs inside a container and executes a loop:
 ##  Backup Workflow
 
 [Start]
+
 ↓
+
 Wait for MySQL
+
 ↓
+
 Create Timestamp
+
 ↓
+
 Dump MySQL → db_<timestamp>.sql
+
 ↓
+
 Archive NFS → files_<timestamp>.tar.gz
+
 ↓
+
 Delete old backups (keep last 5)
+
 ↓
+
 Sleep (5 min)
+
 ↓
+
 Repeat
 
 ---
